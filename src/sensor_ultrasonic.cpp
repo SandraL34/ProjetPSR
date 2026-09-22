@@ -1,5 +1,6 @@
-#include "sensor_ultrasonic.h"
 #include <Arduino.h>
+
+#include "sensor_ultrasonic.h"
 
 SensorUltrasonic::SensorUltrasonic(int trigPin, int echoPin)
     : _trigPin(trigPin), _echoPin(echoPin)
@@ -14,28 +15,23 @@ void SensorUltrasonic::begin()
     digitalWrite(_trigPin, LOW);
 }
 
-float SensorUltrasonic::lire()
-{
-    // On envoie une impulsion de 10 µs
-    digitalWrite(_trigPin, LOW);
+float SensorUltrasonic::read() const {
+    digitalWrite(_trigPin, LOW); // init
     delayMicroseconds(2);
 
     digitalWrite(_trigPin, HIGH);
     delayMicroseconds(10);
     digitalWrite(_trigPin, LOW);
 
-    // Mesure la durée du retour
-    long duree = pulseIn(_echoPin, HIGH, 30000);
+    long duration = pulseIn(_echoPin, HIGH, 30000);
 
     // Aucun écho reçu
-    if (duree == 0)
+    if (duration == 0)
     {
-        return 2000;
+        return 2000; // !! A MODIFIER
     }
 
-    // Vitesse du son ≈ 0,0343 cm/µs
-    // /2 car le son fait aller + retour
-    float distance = duree * 0.0343 / 2.0;
+    float distance = duration * 0.0343 / 2.0;  // Vitesse du son / 2 car aller-retour
 
     return distance;
 }

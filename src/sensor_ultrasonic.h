@@ -1,12 +1,12 @@
-#ifndef SENSOR_ULTRASONIC_H
-#define SENSOR_ULTRASONIC_H
+#ifndef PROJETRSP_SENSOR_ULTRASONIC_H
+#define PROJETRSP_SENSOR_ULTRASONIC_H
 
 class SensorUltrasonic {
 public:
     SensorUltrasonic(int trigPin, int echoPin);
 
     void begin();
-    float lire();
+    float read() const;
 
 private:
     int _trigPin;

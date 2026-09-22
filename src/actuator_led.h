@@ -1,20 +1,19 @@
-#ifndef PROJETPSR_ACTUATOR_LED_H
-#define PROJETPSR_ACTUATOR_LED_H
+#ifndef PROJETRSP_ACTUATOR_LED_H
+#define PROJETRSP_ACTUATOR_LED_H
 
 class ActuatorLed {
     public:
-        ActuatorLed(int pinRed, int pinGreen, int pinBlue);
+        ActuatorLed(int pinRed, int pinGreen);
 
         void begin();
 
-        void rouge();
-        void vert();
-        void eteindre();
+        void red() const;
+        void green() const;
+        void unlit() const;
 
     private:
-        int _pinRed;
-        int _pinGreen;
-        int _pinBlue;
+        const int _pinRed;
+        const int _pinGreen;
 };
 
-#endif // PROJETPSR_ACTUATOR_LED_H
+#endif // PROJETRSP_ACTUATOR_LED_H

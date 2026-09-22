@@ -1,9 +1,5 @@
-//
-// Created by Sandra Lorbois on 21/09/2026.
-//
-
-#ifndef PROJETPSR_SENSOR_LIGHT_H
-#define PROJETPSR_SENSOR_LIGHT_H
+#ifndef PROJETRSP_SENSOR_LIGHT_H
+#define PROJETRSP_SENSOR_LIGHT_H
 
 
 class SensorLight {
@@ -11,11 +7,11 @@ class SensorLight {
         SensorLight(int pin);
 
         void begin();
-        int lire();
+        int read() const;
 
     private:
         int _pin;
 };
 
 
-#endif //PROJETPSR_SENSOR_LIGHT_H
+#endif //PROJETRSP_SENSOR_LIGHT_H

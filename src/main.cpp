@@ -5,62 +5,46 @@
 #include "sensor_light.h"
 #include "sensor_ultrasonic.h"
 
-// =========================
-// Broches
-// =========================
 
-const int PIN_CAPTEUR = A0;
-const int PIN_SERVO = 14;
+// Pin ESP
 
-// LED RGB
-const int PIN_LED_ROUGE = D1;
-const int PIN_LED_VERT  = D2;
-const int PIN_LED_BLEU  = D3;
+const int PIN_LIGHT_SENSOR = A0;
+const int PIN_MOTOR = 14;
 
-// HC-SR04
+const int PIN_LED_RED = D1;
+const int PIN_LED_GREEN  = D2;
+
 const int PIN_TRIG = D6;
 const int PIN_ECHO = D7;
 
 
-// =========================
 // Seuils
-// =========================
 
-// Lumière
-const int SEUIL_LUMIERE = 1000;
-const int SEUIL_SOMBRE = 800;
+const int LIMIT_LIGHT = 1000;
+const int LIMIT_DARK = 800;
 
-// Distance
-const int SEUIL_DISTANCE_DANGER = 50;
+const int LIMIT_DISTANCE_DANGER = 50;
 
 
-// =========================
 // Création des composants
-// =========================
 
-SensorLight capteurLumiere(PIN_CAPTEUR);
+SensorLight lightSensor(PIN_LIGHT_SENSOR);
 
-ActuatorMotor bras(PIN_SERVO);
+ActuatorMotor arm(PIN_MOTOR);
 
 SensorUltrasonic distance(PIN_TRIG, PIN_ECHO);
 
-ActuatorLed led(
-    PIN_LED_ROUGE,
-    PIN_LED_VERT,
-    PIN_LED_BLEU
-);
+ActuatorLed led(PIN_LED_RED, PIN_LED_GREEN);
 
 
-// =========================
 // Setup
-// =========================
 
 void setup()
 {
     Serial.begin(115200);
 
-    capteurLumiere.begin();
-    bras.begin();
+    lightSensor.begin();
+    arm.begin();
     distance.begin();
     led.begin();
 
@@ -69,91 +53,70 @@ void setup()
 }
 
 
-// =========================
 // Loop
-// =========================
 
 void loop()
 {
-    // Lecture des capteurs
-    int lumiere = capteurLumiere.lire();
-    float valeurDistance = distance.lire();
+    int lightValue = lightSensor.read();
+    float distanceValue = distance.read();
 
-
-    // =========================================
-    // OBSTACLE
-    // =========================================
-
-    if (valeurDistance != -1 &&
-        valeurDistance < SEUIL_DISTANCE_DANGER)
+    // S'il y a un obstacle et qu'il est à une distance trop proche
+    if (distanceValue != -1 && distanceValue < LIMIT_DISTANCE_DANGER)
     {
-        // Si le bras est déployé,
-        // on le replie et on allume la LED rouge
+        // Si le bras est déployé, on le replie et on allume la LED rouge
 
-        if (bras.getAngle() != 0)
+        if (arm.isOpen())
         {
-            led.rouge();
+            led.red();
 
-            bras.placer(0);
+            arm.close();
 
-            Serial.println("Obstacle -> bras replie");
+            Serial.println("Repli du bras car obstacle");
         }
     }
-
-
-    // =========================================
-    // PAS D'OBSTACLE
-    // =========================================
-
+    // S'il n'y a pas d'obstacle proche
     else
     {
-        // -------------------------
-        // Lumière -> déploiement
-        // -------------------------
+        // Si le bras n'est pas déployé et qu'il y a assez de lumière, on le déploie et on allume la led verte
 
-        if (lumiere > SEUIL_LUMIERE &&
-            bras.getAngle() != 180)
+        if (lightValue > LIMIT_LIGHT && arm.isClosed())
         {
-            led.vert();
 
-            bras.placer(180);
+            led.green();
 
-            Serial.println("Lumiere -> bras deploye");
+            arm.open();
+
+            Serial.println("Déploiement du bras car lumière");
         }
 
 
-        // -------------------------
-        // Obscurité -> repliement
-        // -------------------------
+        // Si le bras est déployé et qu'il n'y a plus de lumière, on le replie et on allume la led rouge
 
-        else if (lumiere < SEUIL_SOMBRE &&
-                 bras.getAngle() != 0)
+        else if (lightValue < LIMIT_DARK && arm.isOpen())
         {
-            led.rouge();
+            led.red();
 
-            bras.placer(0);
+            arm.close();
 
-            Serial.println("Obscurite -> bras replie");
+            Serial.println("Repli du bras car obscurité");
         }
     }
 
 
-    // =========================================
-    // Affichage
-    // =========================================
+    // Display
 
 
     delay(1500);
 
     Serial.print("Lumiere : ");
-    Serial.print(lumiere);
+    Serial.print(lightValue);
 
     Serial.print(" | Bras : ");
-    Serial.print(bras.getAngle());
+    Serial.print(arm.getAngle());
 
     Serial.print(" | Distance : ");
-    Serial.print(valeurDistance);
-    Serial.println(" cm");
+    Serial.print(distanceValue);
+    Serial.println();
 
-    led.eteindre();
+    led.unlit();
 }

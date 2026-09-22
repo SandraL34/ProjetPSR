@@ -1,9 +1,5 @@
-//
-// Created by Sandra Lorbois on 21/09/2026.
-//
-
-#ifndef PROJETPSR_MOTOR_H
-#define PROJETPSR_MOTOR_H
+#ifndef PROJETRSP_MOTOR_H
+#define PROJETRSP_MOTOR_H
 
 
 class ActuatorMotor {
@@ -11,13 +7,21 @@ class ActuatorMotor {
         ActuatorMotor(int pin);
 
         void begin();
-        void placer(int angle);
+        void move(int angle);
+        void open();
+        void close();
 
         int getAngle() const;
 
+        bool isOpen() const;
+        bool isClosed() const;
+
     private:
-        int _pin;
+        const int _pin;
         int _angle;
+
+        const int _angleOpen = 180;
+        const int _angleClosed = 0;
 };
 
 

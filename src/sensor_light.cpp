@@ -1,9 +1,7 @@
-//
-// Created by Sandra Lorbois on 21/09/2026.
-//
+#include <Arduino.h>
 
 #include "sensor_light.h"
-#include <Arduino.h>
+
 
 SensorLight::SensorLight(int pin)
     : _pin(pin)
@@ -15,7 +13,7 @@ void SensorLight::begin()
     pinMode(_pin, INPUT);
 }
 
-int SensorLight::lire()
+int SensorLight::read() const
 {
     return analogRead(_pin);
 }

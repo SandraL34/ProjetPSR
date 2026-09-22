@@ -1,10 +1,10 @@
-#include "actuator_led.h"
 #include <Arduino.h>
 
-ActuatorLed::ActuatorLed(int pinRed, int pinGreen, int pinBlue)
+#include "actuator_led.h"
+
+ActuatorLed::ActuatorLed(int pinRed, int pinGreen)
     : _pinRed(pinRed),
-      _pinGreen(pinGreen),
-      _pinBlue(pinBlue)
+      _pinGreen(pinGreen)
 {
 }
 
@@ -12,28 +12,23 @@ void ActuatorLed::begin()
 {
     pinMode(_pinRed, OUTPUT);
     pinMode(_pinGreen, OUTPUT);
-    pinMode(_pinBlue, OUTPUT);
 
-    eteindre();
+    unlit();
 }
 
-void ActuatorLed::rouge()
+void ActuatorLed::red() const
 {
     analogWrite(_pinRed, 80);
     analogWrite(_pinGreen, 0);
-    analogWrite(_pinBlue, 0);
 }
 
-void ActuatorLed::vert()
-{
+void ActuatorLed::green() const {
     analogWrite(_pinRed, 0);
     analogWrite(_pinGreen, 80);
-    analogWrite(_pinBlue, 0);
 }
 
-void ActuatorLed::eteindre()
+void ActuatorLed::unlit() const
 {
     analogWrite(_pinRed, 0);
     analogWrite(_pinGreen, 0);
-    analogWrite(_pinBlue, 0);
 }
