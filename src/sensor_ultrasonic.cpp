@@ -28,7 +28,7 @@ float SensorUltrasonic::read() const {
     // Aucun écho reçu
     if (duration == 0)
     {
-        return 2000; // !! A MODIFIER
+        return -1;
     }
 
     float distance = duration * 0.0343 / 2.0;  // Vitesse du son / 2 car aller-retour

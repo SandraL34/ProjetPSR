@@ -1,10 +1,18 @@
 #include <Arduino.h>
+#include <ESP8266WiFi.h>
 
 #include "actuator_motor.h"
 #include "actuator_led.h"
 #include "sensor_light.h"
 #include "sensor_ultrasonic.h"
+#include "api_client.h"
 
+
+// Envoi API
+const char* WIFI_SSID = "Xiaomi 11 Lite 5G NE";
+const char* WIFI_PASSWORD = "vf8t5ukb8t258f2";
+
+const char* API_URL = "http://10.213.28.43:8000/api/measurements";
 
 // Pin ESP
 
@@ -23,7 +31,7 @@ const int PIN_ECHO = D7;
 const int LIMIT_LIGHT = 1000;
 const int LIMIT_DARK = 800;
 
-const int LIMIT_DISTANCE_DANGER = 50;
+const int LIMIT_DISTANCE_DANGER = 5;
 
 
 // Création des composants
@@ -36,12 +44,36 @@ SensorUltrasonic distance(PIN_TRIG, PIN_ECHO);
 
 ActuatorLed led(PIN_LED_RED, PIN_LED_GREEN);
 
+ApiClient apiClient(API_URL);
+
+
+// Connect wifi
+
+void connectWifi()
+{
+    Serial.print("Connexion au Wi-Fi");
+
+    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+
+    while (WiFi.status() != WL_CONNECTED)
+    {
+        delay(500);
+        Serial.print(".");
+    }
+
+    Serial.println();
+    Serial.println("Wi-Fi connecté !");
+    Serial.print("Adresse IP de l'ESP : ");
+    Serial.println(WiFi.localIP());
+}
 
 // Setup
 
 void setup()
 {
     Serial.begin(115200);
+
+    connectWifi();
 
     lightSensor.begin();
     arm.begin();
@@ -102,6 +134,9 @@ void loop()
         }
     }
 
+    bool panelOpen = arm.isOpen();
+
+    apiClient.sendMeasurement(lightValue, distanceValue, panelOpen);
 
     // Display
 
