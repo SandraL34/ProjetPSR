@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
+#include <ESP8266WebServer.h>
 
 #include "actuator_motor.h"
 #include "actuator_led.h"
@@ -46,6 +47,8 @@ ActuatorLed led(PIN_LED_RED, PIN_LED_GREEN);
 
 ApiClient apiClient(API_URL);
 
+ESP8266WebServer server(80);
+
 
 // Connect wifi
 
@@ -67,10 +70,102 @@ void connectWifi()
     Serial.println(WiFi.localIP());
 }
 
+// ajouter les headers pour la connexion manuelle à L'ESP
+
+void addCorsHeaders()
+{
+    server.sendHeader("Access-Control-Allow-Origin", "*");
+    server.sendHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+    server.sendHeader("Access-Control-Allow-Headers", "Content-Type");
+}
+
+// Requête options
+
+void handleOptions()
+{
+    addCorsHeaders();
+    server.send(204);
+}
+
+// Créer serveur web pour commandes manuelles
+
+void handleCommand()
+{
+    addCorsHeaders();
+
+    if (!server.hasArg("plain"))
+    {
+        server.send(
+            400,
+            "application/json",
+            "{\"success\":false,\"message\":\"Body JSON manquant\"}"
+        );
+        return;
+    }
+
+    String body = server.arg("plain");
+
+    Serial.print("Commande reçue : ");
+    Serial.println(body);
+
+    if (body.indexOf("\"action\":\"deploy\"") >= 0)
+    {
+        if (arm.isClosed())
+        {
+            led.green();
+            arm.open();
+
+            Serial.println("Commande manuelle : DEPLOY");
+        }
+        else
+        {
+            Serial.println("Commande DEPLOY : bras déjà ouvert");
+        }
+
+        server.send(
+            200,
+            "application/json",
+            "{\"success\":true,\"action\":\"deploy\"}"
+        );
+        return;
+    }
+
+    if (body.indexOf("\"action\":\"retract\"") >= 0)
+    {
+        if (arm.isOpen())
+        {
+            led.red();
+            arm.close();
+
+            Serial.println("Commande manuelle : RETRACT");
+        }
+        else
+        {
+            Serial.println("Commande RETRACT : bras déjà fermé");
+        }
+
+        server.send(
+            200,
+            "application/json",
+            "{\"success\":true,\"action\":\"retract\"}"
+        );
+        return;
+    }
+
+    server.send(
+        400,
+        "application/json",
+        "{\"success\":false,\"message\":\"Action inconnue\"}"
+    );
+}
+
 // Setup
 
 void setup()
 {
+    server.on("/api/command", HTTP_POST, handleCommand);
+    server.on("/api/command", HTTP_OPTIONS, handleOptions);
+    
     Serial.begin(115200);
 
     connectWifi();
@@ -80,8 +175,11 @@ void setup()
     distance.begin();
     led.begin();
 
+    server.begin();
+
     Serial.println();
     Serial.println("Systeme pret");
+    Serial.println("Serveur HTTP demarre");
 }
 
 
@@ -89,6 +187,8 @@ void setup()
 
 void loop()
 {
+    server.handleClient();
+
     int lightValue = lightSensor.read();
     float distanceValue = distance.read();
 
@@ -140,8 +240,9 @@ void loop()
 
     // Display
 
-
+    server.handleClient();
     delay(1500);
+    server.handleClient();
 
     Serial.print("Lumiere : ");
     Serial.print(lightValue);
