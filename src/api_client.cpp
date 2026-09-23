@@ -3,8 +3,10 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
 
-ApiClient::ApiClient(const char* apiUrl)
-    : _apiUrl(apiUrl)
+ApiClient::ApiClient(const char* apiUrl, const char* username, const char* password)
+    : _apiUrl(apiUrl),
+    _username(username),
+    _password(password)
 {
 }
 

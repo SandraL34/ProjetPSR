@@ -14,6 +14,8 @@ const char* WIFI_SSID = "Xiaomi 11 Lite 5G NE";
 const char* WIFI_PASSWORD = "vf8t5ukb8t258f2";
 
 const char* API_URL = "http://10.213.28.43:8000/api/measurements";
+const char* API_USERNAME = "test@gmail.com";
+const char* API_PASSWORD = "test";
 
 // Pin ESP
 
@@ -45,7 +47,7 @@ SensorUltrasonic distance(PIN_TRIG, PIN_ECHO);
 
 ActuatorLed led(PIN_LED_RED, PIN_LED_GREEN);
 
-ApiClient apiClient(API_URL);
+ApiClient apiClient(API_URL, API_USERNAME, API_PASSWORD);
 
 ESP8266WebServer server(80);
 
