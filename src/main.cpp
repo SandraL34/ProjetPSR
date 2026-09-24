@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
+#include <ESP8266mDNS.h>
 
 #include "actuator_motor.h"
 #include "actuator_led.h"
@@ -16,6 +17,7 @@ const char* WIFI_PASSWORD = "vf8t5ukb8t258f2";
 const char* API_URL = "http://10.213.28.43:8000/api/measurements";
 const char* API_USERNAME = "test@gmail.com";
 const char* API_PASSWORD = "test";
+const char* MDNS_HOSTNAME = "rsp-panel";
 
 // Pin ESP
 
@@ -50,6 +52,7 @@ ActuatorLed led(PIN_LED_RED, PIN_LED_GREEN);
 ApiClient apiClient(API_URL, API_USERNAME, API_PASSWORD);
 
 ESP8266WebServer server(80);
+bool manualMode = false;
 
 
 // Connect wifi
@@ -89,6 +92,12 @@ void handleOptions()
     server.send(204);
 }
 
+void handleHealth()
+{
+    addCorsHeaders();
+    server.send(200, "application/json", "{\"ok\":true,\"service\":\"rsp-panel\"}");
+}
+
 // Créer serveur web pour commandes manuelles
 
 void handleCommand()
@@ -106,12 +115,18 @@ void handleCommand()
     }
 
     String body = server.arg("plain");
+    String command = body;
+    command.replace(" ", "");
+    command.replace("\t", "");
+    command.replace("\r", "");
+    command.replace("\n", "");
 
     Serial.print("Commande reçue : ");
     Serial.println(body);
 
-    if (body.indexOf("\"action\":\"deploy\"") >= 0)
+    if (command.indexOf("\"action\":\"deploy\"") >= 0)
     {
+        manualMode = true;
         if (arm.isClosed())
         {
             led.green();
@@ -127,13 +142,14 @@ void handleCommand()
         server.send(
             200,
             "application/json",
-            "{\"success\":true,\"action\":\"deploy\"}"
+            "{\"success\":true,\"action\":\"deploy\",\"panel_open\":true,\"mode\":\"manual\"}"
         );
         return;
     }
 
-    if (body.indexOf("\"action\":\"retract\"") >= 0)
+    if (command.indexOf("\"action\":\"retract\"") >= 0)
     {
+        manualMode = true;
         if (arm.isOpen())
         {
             led.red();
@@ -149,7 +165,7 @@ void handleCommand()
         server.send(
             200,
             "application/json",
-            "{\"success\":true,\"action\":\"retract\"}"
+            "{\"success\":true,\"action\":\"retract\",\"panel_open\":false,\"mode\":\"manual\"}"
         );
         return;
     }
@@ -167,10 +183,22 @@ void setup()
 {
     server.on("/api/command", HTTP_POST, handleCommand);
     server.on("/api/command", HTTP_OPTIONS, handleOptions);
+    server.on("/health", HTTP_GET, handleHealth);
     
     Serial.begin(115200);
 
     connectWifi();
+
+    if (MDNS.begin(MDNS_HOSTNAME))
+    {
+        Serial.print("Adresse locale : http://");
+        Serial.print(MDNS_HOSTNAME);
+        Serial.println(".local");
+    }
+    else
+    {
+        Serial.println("Erreur de démarrage mDNS");
+    }
 
     lightSensor.begin();
     arm.begin();
@@ -190,6 +218,7 @@ void setup()
 void loop()
 {
     server.handleClient();
+    MDNS.update();
 
     int lightValue = lightSensor.read();
     float distanceValue = distance.read();
@@ -207,9 +236,9 @@ void loop()
 
             Serial.println("Repli du bras car obstacle");
         }
+        manualMode = false;
     }
-    // S'il n'y a pas d'obstacle proche
-    else
+    else if (!manualMode)
     {
         // Si le bras n'est pas déployé et qu'il y a assez de lumière, on le déploie et on allume la led verte
 
@@ -243,8 +272,12 @@ void loop()
     // Display
 
     server.handleClient();
-    delay(1500);
-    server.handleClient();
+    for (int i = 0; i < 60; ++i)
+    {
+        server.handleClient();
+        MDNS.update();
+        delay(25);
+    }
 
     Serial.print("Lumiere : ");
     Serial.print(lightValue);
