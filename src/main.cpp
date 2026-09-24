@@ -19,7 +19,7 @@ const char* API_USERNAME = "test@gmail.com";
 const char* API_PASSWORD = "test";
 const char* MDNS_HOSTNAME = "rsp-panel";
 
-// Pin ESP
+// Définition des broches de l'ESP
 
 const int PIN_LIGHT_SENSOR = A0;
 const int PIN_MOTOR = 14;
@@ -33,13 +33,13 @@ const int PIN_ECHO = D7;
 
 // Seuils
 
-const int LIMIT_LIGHT = 1000;
-const int LIMIT_DARK = 800;
+const int LIMIT_LIGHT = 1000; // déployer
+const int LIMIT_DARK = 800; // replier
 
-const int LIMIT_DISTANCE_DANGER = 5;
+const int LIMIT_DISTANCE_DANGER = 5; // replier
 
 
-// Création des composants
+// Création des objets
 
 SensorLight lightSensor(PIN_LIGHT_SENSOR);
 
@@ -52,6 +52,10 @@ ActuatorLed led(PIN_LED_RED, PIN_LED_GREEN);
 ApiClient apiClient(API_URL, API_USERNAME, API_PASSWORD);
 
 ESP8266WebServer server(80);
+
+
+// Mode manuel
+
 bool manualMode = false;
 
 
@@ -61,9 +65,9 @@ void connectWifi()
 {
     Serial.print("Connexion au Wi-Fi");
 
-    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+    WiFi.begin(WIFI_SSID, WIFI_PASSWORD); // démarrer le wifi
 
-    while (WiFi.status() != WL_CONNECTED)
+    while (WiFi.status() != WL_CONNECTED) // Tant que le wifi n'est pas connecté
     {
         delay(500);
         Serial.print(".");
@@ -75,66 +79,66 @@ void connectWifi()
     Serial.println(WiFi.localIP());
 }
 
-// ajouter les headers pour la connexion manuelle à L'ESP
+// ajouter les headers pour la connexion manuelle à L'ESP (cors = mécanisme de sécurité via headers de sécurité)
 
 void addCorsHeaders()
 {
-    server.sendHeader("Access-Control-Allow-Origin", "*");
-    server.sendHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-    server.sendHeader("Access-Control-Allow-Headers", "Content-Type");
+    server.sendHeader("Access-Control-Allow-Origin", "*"); // toutes les IP sont autorisées
+    server.sendHeader("Access-Control-Allow-Methods", "POST, OPTIONS"); //  requêtes post et options autorisées
+    server.sendHeader("Access-Control-Allow-Headers", "Content-Type"); // Accepter comme header "content-type"
 }
 
 // Requête options
 
-void handleOptions()
+void handleOptions() // envoi des headers
 {
-    addCorsHeaders();
-    server.send(204);
+    addCorsHeaders(); // ajouter les headers pour la connexion manuelle à L'ESP
+    server.send(204); // HTTP success no content
 }
 
-void handleHealth()
+void handleHealth() // envoi de l'état de l'appareil
 {
-    addCorsHeaders();
-    server.send(200, "application/json", "{\"ok\":true,\"service\":\"rsp-panel\"}");
+    addCorsHeaders(); // ajouter les headers pour la connexion manuelle à L'ESP
+    server.send(200, "application/json", "{\"ok\":true,\"service\":\"rsp-panel\"}"); // requête OK renvoyée en JSON
 }
 
 // Créer serveur web pour commandes manuelles
 
 void handleCommand()
 {
-    addCorsHeaders();
+    addCorsHeaders(); // ajouter les headers pour la connexion manuelle à L'ESP
 
-    if (!server.hasArg("plain"))
+    if (!server.hasArg("plain")) // si la requête n'a pas de body
     {
         server.send(
             400,
             "application/json",
             "{\"success\":false,\"message\":\"Body JSON manquant\"}"
-        );
+        ); // requête failed renvoyée en json
         return;
     }
 
-    String body = server.arg("plain");
-    String command = body;
-    command.replace(" ", "");
-    command.replace("\t", "");
-    command.replace("\r", "");
-    command.replace("\n", "");
+    String body = server.arg("plain"); // récupération du body
+    String command = body; // copie du body
+    command.replace(" ", ""); // supprime les espaces
+    command.replace("\t", ""); // supprime les tabs
+    command.replace("\r", ""); // supprime les retours charriot
+    command.replace("\n", ""); // supprime les sauts de ligne
 
     Serial.print("Commande reçue : ");
     Serial.println(body);
 
-    if (command.indexOf("\"action\":\"deploy\"") >= 0)
+    if (command.indexOf("\"action\":\"deploy\"") >= 0) // si la commande deploy est reçue
     {
-        manualMode = true;
-        if (arm.isClosed())
+        manualMode = true; // passage en mode manuel
+        if (arm.isClosed()) // si le bras est replié
         {
-            led.green();
-            arm.open();
+            led.green(); // allume la led verte
+            arm.open(); // déplie le bras
 
             Serial.println("Commande manuelle : DEPLOY");
         }
-        else
+        else // si le bras est déjà déplié
         {
             Serial.println("Commande DEPLOY : bras déjà ouvert");
         }
@@ -143,21 +147,21 @@ void handleCommand()
             200,
             "application/json",
             "{\"success\":true,\"action\":\"deploy\",\"panel_open\":true,\"mode\":\"manual\"}"
-        );
+        ); // requête OK renvoyée en JSON
         return;
     }
 
-    if (command.indexOf("\"action\":\"retract\"") >= 0)
+    if (command.indexOf("\"action\":\"retract\"") >= 0) // si la commande retract est reçue
     {
-        manualMode = true;
-        if (arm.isOpen())
+        manualMode = true; // passage en mode manuel
+        if (arm.isOpen()) // si le bras est ouvert
         {
-            led.red();
-            arm.close();
+            led.red(); // allume la led rouge
+            arm.close(); // replie le bras
 
             Serial.println("Commande manuelle : RETRACT");
         }
-        else
+        else // si le bras est déjà replié
         {
             Serial.println("Commande RETRACT : bras déjà fermé");
         }
@@ -166,7 +170,7 @@ void handleCommand()
             200,
             "application/json",
             "{\"success\":true,\"action\":\"retract\",\"panel_open\":false,\"mode\":\"manual\"}"
-        );
+        ); // requête OK renvoyée par JSON
         return;
     }
 
@@ -174,38 +178,38 @@ void handleCommand()
         400,
         "application/json",
         "{\"success\":false,\"message\":\"Action inconnue\"}"
-    );
+    ); // requête failed renvoyée par JSON
 }
 
 // Setup
 
-void setup()
+void setup() // config et démarrage des composants et routes
 {
-    server.on("/api/command", HTTP_POST, handleCommand);
-    server.on("/api/command", HTTP_OPTIONS, handleOptions);
-    server.on("/health", HTTP_GET, handleHealth);
+    server.on("/api/command", HTTP_POST, handleCommand); // config de la route de commande
+    server.on("/api/command", HTTP_OPTIONS, handleOptions); // config de la route d'options (envoi des headers cors)
+    server.on("/health", HTTP_GET, handleHealth); // config de la route pour vérifier si l'appareil est OK
     
-    Serial.begin(115200);
+    Serial.begin(115200); // Définir la vitesse de l'ESP
 
-    connectWifi();
+    connectWifi(); // connexion au wifi
 
-    if (MDNS.begin(MDNS_HOSTNAME))
+    if (MDNS.begin(MDNS_HOSTNAME)) // si appareil enregistré sur wifi
     {
         Serial.print("Adresse locale : http://");
         Serial.print(MDNS_HOSTNAME);
         Serial.println(".local");
     }
-    else
+    else // Si appareil pas enregistré sur le wifi
     {
         Serial.println("Erreur de démarrage mDNS");
     }
 
-    lightSensor.begin();
-    arm.begin();
-    distance.begin();
-    led.begin();
+    lightSensor.begin(); // démarrer le capteur de luminosité
+    arm.begin(); // démarrer le bras motorisé
+    distance.begin(); // démarrer le capteur de distance
+    led.begin(); // démarrer les lampes
 
-    server.begin();
+    server.begin(); // démarrer le serveur
 
     Serial.println();
     Serial.println("Systeme pret");
@@ -215,67 +219,62 @@ void setup()
 
 // Loop
 
-void loop()
+void loop() // boucle de fonctionnement
 {
-    server.handleClient();
-    MDNS.update();
+    server.handleClient(); // check si requête envoyée
+    MDNS.update(); // vérifie l'accès à l'appareil
 
-    int lightValue = lightSensor.read();
-    float distanceValue = distance.read();
+    int lightValue = lightSensor.read(); // récupérer la luminosité
+    float distanceValue = distance.read(); // récupérer la distance
 
-    // S'il y a un obstacle et qu'il est à une distance trop proche
-    if (distanceValue != -1 && distanceValue < LIMIT_DISTANCE_DANGER)
+    if (distanceValue != -1 && distanceValue < LIMIT_DISTANCE_DANGER) // S'il y a un obstacle et qu'il est à une distance trop proche
     {
-        // Si le bras est déployé, on le replie et on allume la LED rouge
 
-        if (arm.isOpen())
+        if (arm.isOpen()) // Si le bras est déployé
         {
-            led.red();
+            led.red(); // allumage de la led rouge
 
-            arm.close();
+            arm.close(); // repli du bras
 
             Serial.println("Repli du bras car obstacle");
         }
-        manualMode = false;
+        manualMode = false; // mode automatique
     }
-    else if (!manualMode)
+    else if (!manualMode) // si on est en mode automatique
     {
-        // Si le bras n'est pas déployé et qu'il y a assez de lumière, on le déploie et on allume la led verte
 
-        if (lightValue > LIMIT_LIGHT && arm.isClosed())
+        if (lightValue > LIMIT_LIGHT && arm.isClosed()) // Si le bras n'est pas déployé et qu'il y a assez de lumière
         {
 
-            led.green();
+            led.green(); // allumage de la led verte
 
-            arm.open();
+            arm.open(); // déplier le bras
 
             Serial.println("Déploiement du bras car lumière");
         }
 
 
-        // Si le bras est déployé et qu'il n'y a plus de lumière, on le replie et on allume la led rouge
-
-        else if (lightValue < LIMIT_DARK && arm.isOpen())
+        else if (lightValue < LIMIT_DARK && arm.isOpen()) // Si le bras est déployé et qu'il n'y a plus de lumière
         {
-            led.red();
+            led.red(); // allumage de la led en rouge
 
-            arm.close();
+            arm.close(); // replier le bras
 
             Serial.println("Repli du bras car obscurité");
         }
     }
 
-    bool panelOpen = arm.isOpen();
+    bool panelOpen = arm.isOpen(); // récupérer si le bras est ouvert ou non
 
-    apiClient.sendMeasurement(lightValue, distanceValue, panelOpen);
+    apiClient.sendMeasurement(lightValue, distanceValue, panelOpen); // envoi des valeurs à l'API pour écriture en BDD
 
     // Display
 
-    server.handleClient();
-    for (int i = 0; i < 60; ++i)
+    server.handleClient(); // check si requête envoyée
+    for (int i = 0; i < 60; ++i) // réalise 60 fois cette requête
     {
-        server.handleClient();
-        MDNS.update();
+        server.handleClient(); // check si requête envoyée
+        MDNS.update(); // vérifier l'accès à l'appareil
         delay(25);
     }
 
@@ -289,5 +288,5 @@ void loop()
     Serial.print(distanceValue);
     Serial.println();
 
-    led.unlit();
+    led.unlit(); // éteindre la led
 }

@@ -3,17 +3,17 @@
 #include "sensor_light.h"
 
 
-SensorLight::SensorLight(int pin)
+SensorLight::SensorLight(int pin) // constructeur
     : _pin(pin)
 {
 }
 
-void SensorLight::begin()
+void SensorLight::begin() // démarrage du capteur de luminosité
 {
-    pinMode(_pin, INPUT);
+    pinMode(_pin, INPUT); // la broche va recevoir un signal
 }
 
-int SensorLight::read() const
+int SensorLight::read() const // lecture de la valeur de la luminosité
 {
-    return analogRead(_pin);
+    return analogRead(_pin); // retourne la valeur de la luminosité
 }

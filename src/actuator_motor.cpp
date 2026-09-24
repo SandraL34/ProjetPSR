@@ -2,53 +2,53 @@
 
 #include "actuator_motor.h"
 
-ActuatorMotor::ActuatorMotor(int pin)
+ActuatorMotor::ActuatorMotor(int pin) // constructeur
     : _pin(pin), _angle(-1)
 {
 }
 
-void ActuatorMotor::begin()
+void ActuatorMotor::begin() // démarrage du bras moteur
 {
-    pinMode(_pin, OUTPUT);
+    pinMode(_pin, OUTPUT); // la broche va envoyer un signal
 
-    analogWriteFreq(50); // un signal complet dure 1 / 50 = 0,02 secondes
-    analogWriteRange(20000); // correspondance analogWrite vs microsecondes
+    analogWriteFreq(50); // réglage de la fréquence (un signal complet dure 1 / 50 = 0,02 secondes)
+    analogWriteRange(20000); // résolution du signal (correspondance analogWrite vs microsecondes)
 
-    move(0);
+    move(_angleClosed); // repli du bras
 }
 
-void ActuatorMotor::move(int angle)
+void ActuatorMotor::move(int angle) // déplacement du bras
 {
-    angle = constrain(angle, 0, 180);
+    angle = constrain(angle, 0, 180); // range maximum du bras
 
     int impulsion = map(angle, 0, 180, 500, 2400); // conversion de l'angle en µs
 
-    analogWrite(_pin, impulsion);
+    analogWrite(_pin, impulsion); // envoi du signal et donc mouvement du bras
 
-    _angle = angle;
+    _angle = angle; // donner à la variable la valeur de l'attribut
 }
 
-void ActuatorMotor::open()
+void ActuatorMotor::open() // déploiement du bras
 {
-    move(_angleOpen);
+    move(_angleOpen); // déployer le bras
 }
 
-void ActuatorMotor::close()
+void ActuatorMotor::close() // repli du bras
 {
-    move(_angleClosed);
+    move(_angleClosed); // replier le bras
 }
 
-bool ActuatorMotor::isOpen() const
+bool ActuatorMotor::isOpen() const // récupérer l'angle si déployé
 {
-    return _angle == _angleOpen;
+    return _angle == _angleOpen; // retourner l'angle
 }
 
-bool ActuatorMotor::isClosed() const
+bool ActuatorMotor::isClosed() const // récupérer l'angle si replié
 {
-    return _angle == _angleClosed;
+    return _angle == _angleClosed; // retourner l'angle
 }
 
-int ActuatorMotor::getAngle() const
+int ActuatorMotor::getAngle() const // Retourner l'angle
 {
-    return _angle;
+    return _angle; // Retourner l'angle
 }

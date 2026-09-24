@@ -1,22 +1,22 @@
-#ifndef PROJETRSP_MOTOR_H
-#define PROJETRSP_MOTOR_H
+#ifndef PROJETRSP_MOTOR_H // si le fichier n'est pas déjà inclus
+#define PROJETRSP_MOTOR_H // inclure le fichier
 
 
-class ActuatorMotor {
+class ActuatorMotor { // constructeur
     public:
         ActuatorMotor(int pin);
 
-        void begin();
-        void move(int angle);
-        void open();
-        void close();
+        void begin();  // fonction de démarrage
+        void move(int angle); // fonction de mouvement du bras
+        void open(); // fonction de déploiement du bras
+        void close(); // fonction de repli du bras
 
-        int getAngle() const;
+        int getAngle() const; // fonction de récupération de la valeur de l'angle du bras
 
-        bool isOpen() const;
-        bool isClosed() const;
+        bool isOpen() const; // fonction de récupération de la valeur du bras si ouvert
+        bool isClosed() const; // fonction de récupération de la valeur du bras si fermé
 
-    private:
+    private: // variables internes
         const int _pin;
         int _angle;
 
