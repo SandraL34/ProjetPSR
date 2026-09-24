@@ -56,6 +56,7 @@ ESP8266WebServer server(80);
 
 void connectWifi()
 {
+    // Lance la connexion puis attend son établissement avant de démarrer les capteurs.
     Serial.print("Connexion au Wi-Fi");
 
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
@@ -76,6 +77,7 @@ void connectWifi()
 
 void addCorsHeaders()
 {
+    // Autorise le dashboard local à envoyer des commandes à l'ESP8266.
     server.sendHeader("Access-Control-Allow-Origin", "*");
     server.sendHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
     server.sendHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -85,6 +87,7 @@ void addCorsHeaders()
 
 void handleOptions()
 {
+    // Répond à la vérification CORS effectuée avant une requête POST du navigateur.
     addCorsHeaders();
     server.send(204);
 }
@@ -93,8 +96,10 @@ void handleOptions()
 
 void handleCommand()
 {
+    // Traite une commande manuelle de déploiement ou de repli reçue en JSON.
     addCorsHeaders();
 
+    // Refuse la requête si le navigateur n'a fourni aucun corps JSON.
     if (!server.hasArg("plain"))
     {
         server.send(
@@ -107,11 +112,13 @@ void handleCommand()
 
     String body = server.arg("plain");
 
+    // Conserve la commande reçue dans le moniteur série pour faciliter le diagnostic.
     Serial.print("Commande reçue : ");
     Serial.println(body);
 
     if (body.indexOf("\"action\":\"deploy\"") >= 0)
     {
+        // Déploie le bras uniquement s'il est actuellement fermé.
         if (arm.isClosed())
         {
             led.green();
@@ -134,6 +141,7 @@ void handleCommand()
 
     if (body.indexOf("\"action\":\"retract\"") >= 0)
     {
+        // Replie le bras uniquement s'il est actuellement ouvert.
         if (arm.isOpen())
         {
             led.red();
@@ -165,11 +173,13 @@ void handleCommand()
 
 void setup()
 {
+    // Enregistre les routes HTTP avant de lancer le serveur embarqué.
     server.on("/api/command", HTTP_POST, handleCommand);
     server.on("/api/command", HTTP_OPTIONS, handleOptions);
     
     Serial.begin(115200);
 
+    // Initialise successivement le réseau, les capteurs, les actionneurs et le serveur.
     connectWifi();
 
     lightSensor.begin();
@@ -189,14 +199,17 @@ void setup()
 
 void loop()
 {
+    // Traite les commandes manuelles en attente avant de lire les capteurs.
     server.handleClient();
 
+    // Lit la luminosité et la distance instantanées des deux capteurs.
     int lightValue = lightSensor.read();
     float distanceValue = distance.read();
 
     // S'il y a un obstacle et qu'il est à une distance trop proche
     if (distanceValue != -1 && distanceValue < LIMIT_DISTANCE_DANGER)
     {
+        // La sécurité liée à un obstacle est prioritaire sur la luminosité.
         // Si le bras est déployé, on le replie et on allume la LED rouge
 
         if (arm.isOpen())
@@ -211,6 +224,7 @@ void loop()
     // S'il n'y a pas d'obstacle proche
     else
     {
+        // En l'absence d'obstacle proche, la luminosité pilote l'état du bras.
         // Si le bras n'est pas déployé et qu'il y a assez de lumière, on le déploie et on allume la led verte
 
         if (lightValue > LIMIT_LIGHT && arm.isClosed())
@@ -238,10 +252,12 @@ void loop()
 
     bool panelOpen = arm.isOpen();
 
+    // Transmet l'état courant des capteurs et du panneau à l'API distante.
     apiClient.sendMeasurement(lightValue, distanceValue, panelOpen);
 
     // Display
 
+    // Laisse le serveur traiter les requêtes puis limite la fréquence des mesures.
     server.handleClient();
     delay(1500);
     server.handleClient();
