@@ -16,7 +16,7 @@ void ActuatorMotor::begin()
     analogWriteFreq(50); // un signal complet dure 1 / 50 = 0,02 secondes
     analogWriteRange(20000); // correspondance analogWrite vs microsecondes
 
-    move(0);
+    move(_angleClosed);
 }
 
 void ActuatorMotor::move(int angle)

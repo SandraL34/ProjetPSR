@@ -20,7 +20,7 @@ const char* API_PASSWORD = "test";
 // Pin ESP
 
 const int PIN_LIGHT_SENSOR = A0;
-const int PIN_MOTOR = 14;
+const int PIN_MOTOR = D5;
 
 const int PIN_LED_RED = D1;
 const int PIN_LED_GREEN  = D2;
@@ -31,7 +31,7 @@ const int PIN_ECHO = D7;
 
 // Seuils
 
-const int LIMIT_LIGHT = 1000;
+const int LIMIT_LIGHT = 800;
 const int LIMIT_DARK = 800;
 
 const int LIMIT_DISTANCE_DANGER = 5;
@@ -259,7 +259,7 @@ void loop()
 
     // Laisse le serveur traiter les requêtes puis limite la fréquence des mesures.
     server.handleClient();
-    delay(1500);
+    delay(500);
     server.handleClient();
 
     Serial.print("Lumiere : ");
@@ -272,5 +272,5 @@ void loop()
     Serial.print(distanceValue);
     Serial.println();
 
-    led.unlit();
+    led.green();
 }

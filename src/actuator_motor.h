@@ -29,8 +29,8 @@ class ActuatorMotor {
         const int _pin;
         int _angle;
 
-        const int _angleOpen = 100;
-        const int _angleClosed = 0;
+        const int _angleOpen = 120;
+        const int _angleClosed = 35;
 };
 
 
