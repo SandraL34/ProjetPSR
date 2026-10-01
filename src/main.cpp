@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
+#include <ArduinoOTA.h>
 
 #include "actuator_motor.h"
 #include "actuator_led.h"
@@ -10,12 +11,12 @@
 
 
 // Envoi API
-const char* WIFI_SSID = "Xiaomi 11 Lite 5G NE";
-const char* WIFI_PASSWORD = "vf8t5ukb8t258f2";
+const char* WIFI_SSID = STRAWMAN_WIFI_SSID;
+const char* WIFI_PASSWORD = STRAWMAN_WIFI_PASSWORD;
 
-const char* API_URL = "http://10.213.28.43:8000/api/measurements";
-const char* API_USERNAME = "test@gmail.com";
-const char* API_PASSWORD = "test";
+const char* API_URL = STRAWMAN_API_URL;
+const char* API_USERNAME = STRAWMAN_API_USERNAME;
+const char* API_PASSWORD = STRAWMAN_API_PASSWORD;
 
 // Pin ESP
 
@@ -179,6 +180,11 @@ void setup()
     
     Serial.begin(115200);
 
+    // 2. CONFIGURER ET DEMARRER LE FLASH A DISTANCE
+    ArduinoOTA.setHostname("esp8266-rsp"); // Nom de votre choix sur le réseau
+    // ArduinoOTA.setPassword("un_mot_de_passe"); // Optionnel : pour sécuriser le flash
+    ArduinoOTA.begin();
+
     // Initialise successivement le réseau, les capteurs, les actionneurs et le serveur.
     connectWifi();
 
@@ -199,6 +205,8 @@ void setup()
 
 void loop()
 {
+    ArduinoOTA.handle();
+
     // Traite les commandes manuelles en attente avant de lire les capteurs.
     server.handleClient();
 
